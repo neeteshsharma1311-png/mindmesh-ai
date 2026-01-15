@@ -14,7 +14,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="text-muted-foreground">Loading your cognitive dashboard...</p>
+          <p className="text-muted-foreground">
+            Loading your cognitive dashboard...
+          </p>
         </div>
       </div>
     );
