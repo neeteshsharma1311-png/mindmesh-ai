@@ -49,11 +49,11 @@ export const HeroSection = () => {
               transition={{ delay: 0.4 }}
               className="flex flex-wrap gap-4"
             >
-              <button className="btn-cyber flex items-center gap-2 text-lg">
+              <a href="/auth" className="btn-cyber flex items-center gap-2 text-lg">
                 <span className="relative z-10">Start Free</span>
                 <ArrowRight className="w-5 h-5 relative z-10" />
-              </button>
-              <button className="btn-glass flex items-center gap-2 text-lg group">
+              </a>
+              <a href="/dashboard" className="btn-glass flex items-center gap-2 text-lg group">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
                   <Play className="w-4 h-4 text-primary fill-primary" />
                 </div>
