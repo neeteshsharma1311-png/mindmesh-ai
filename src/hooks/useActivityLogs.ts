@@ -47,7 +47,7 @@ export const useLogActivity = () => {
           user_id: user.id,
           action: log.action,
           category: log.category || 'general',
-          metadata: log.metadata || {},
+          metadata: (log.metadata || {}) as unknown as Record<string, never>,
         }])
         .select()
         .single();

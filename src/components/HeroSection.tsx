@@ -58,7 +58,7 @@ export const HeroSection = () => {
                   <Play className="w-4 h-4 text-primary fill-primary" />
                 </div>
                 <span>Watch Demo</span>
-              </button>
+              </a>
             </motion.div>
 
             {/* Stats */}
