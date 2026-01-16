@@ -130,6 +130,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          rollout_percentage: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          rollout_percentage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          rollout_percentage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -204,6 +234,75 @@ export type Database = {
           },
         ]
       }
+      mood_entries: {
+        Row: {
+          anxiety_level: number
+          created_at: string
+          energy_level: number
+          id: string
+          mood_score: number
+          notes: string | null
+          stress_level: number
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          anxiety_level?: number
+          created_at?: string
+          energy_level?: number
+          id?: string
+          mood_score: number
+          notes?: string | null
+          stress_level?: number
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          anxiety_level?: number
+          created_at?: string
+          energy_level?: number
+          id?: string
+          mood_score?: number
+          notes?: string | null
+          stress_level?: number
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      productivity_sessions: {
+        Row: {
+          category: string | null
+          created_at: string
+          duration_minutes: number | null
+          end_time: string | null
+          focus_score: number | null
+          id: string
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          focus_score?: number | null
+          id?: string
+          start_time: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          end_time?: string | null
+          focus_score?: number | null
+          id?: string
+          start_time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -234,6 +333,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          message: string
+          metadata?: Json | null
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -260,6 +386,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: { _user_id?: string }; Returns: boolean }
     }
     Enums: {
