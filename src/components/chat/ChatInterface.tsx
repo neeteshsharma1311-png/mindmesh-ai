@@ -4,6 +4,7 @@ import { Send, Bot, User, Loader2, Sparkles, X, MessageSquare, Plus, Trash2 } fr
 import { useConversations, useMessages, useCreateConversation, useDeleteConversation, useSendMessage, ChatMessage } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { VoiceInput } from '@/components/VoiceInput';
 
 interface ChatInterfaceProps {
   isOpen: boolean;
@@ -254,7 +255,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
             {/* Input */}
             <div className="p-4 border-t border-border bg-background/50 backdrop-blur-sm">
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-end">
                 <textarea
                   ref={inputRef}
                   value={input}
@@ -264,6 +265,12 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                   rows={1}
                   className="flex-1 px-4 py-2.5 bg-muted/50 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
                   disabled={isStreaming}
+                />
+                <VoiceInput 
+                  onTranscript={(text) => {
+                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                  }}
+                  isProcessing={isStreaming}
                 />
                 <button
                   onClick={handleSendMessage}

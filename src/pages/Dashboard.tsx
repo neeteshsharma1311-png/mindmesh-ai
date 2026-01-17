@@ -11,6 +11,7 @@ import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { AddGoalModal } from '@/components/dashboard/AddGoalModal';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ChatButton } from '@/components/chat/ChatButton';
+import { MobileNav } from '@/components/MobileNav';
 import { useLatestMetrics } from '@/hooks/useCognitiveMetrics';
 import { useGoals } from '@/hooks/useGoals';
 import { useProfile } from '@/hooks/useProfile';
@@ -113,6 +114,12 @@ const Dashboard = () => {
       {/* AI Chat */}
       <ChatButton isOpen={chatOpen} onClick={() => setChatOpen(!chatOpen)} />
       <ChatInterface isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+      
+      {/* Mobile Navigation */}
+      <MobileNav />
+      
+      {/* Bottom padding for mobile nav */}
+      <div className="h-20 md:hidden" />
     </div>
   );
 };
