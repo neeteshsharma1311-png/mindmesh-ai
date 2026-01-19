@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Loader2, Sparkles, X, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, X, MessageSquare, Plus, Trash2, History } from 'lucide-react';
 import { useConversations, useMessages, useCreateConversation, useDeleteConversation, useSendMessage, ChatMessage } from '@/hooks/useChat';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VoiceInput } from '@/components/VoiceInput';
@@ -16,8 +17,10 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useLanguage();
 
   const { data: conversations = [] } = useConversations();
   const { data: messages = [] } = useMessages(activeConversation);
@@ -25,25 +28,36 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const deleteConversation = useDeleteConversation();
   const { sendMessage, isStreaming } = useSendMessage();
 
+  // Load messages when conversation changes
   useEffect(() => {
     setLocalMessages(messages);
   }, [messages]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localMessages, streamingContent]);
 
+  // Focus input when opened
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isOpen]);
 
+  // Auto-select most recent conversation on open
+  useEffect(() => {
+    if (isOpen && conversations.length > 0 && !activeConversation) {
+      setActiveConversation(conversations[0].id);
+    }
+  }, [isOpen, conversations, activeConversation]);
+
   const handleCreateConversation = async () => {
-    const conv = await createConversation.mutateAsync('New Conversation');
+    const conv = await createConversation.mutateAsync(t('chat.newConversation'));
     setActiveConversation(conv.id);
     setLocalMessages([]);
     setStreamingContent('');
+    setShowHistory(false);
   };
 
   const handleDeleteConversation = async (id: string) => {
@@ -54,13 +68,18 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     }
   };
 
+  const handleSelectConversation = (id: string) => {
+    setActiveConversation(id);
+    setShowHistory(false);
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim() || isStreaming) return;
 
     let convId = activeConversation;
 
     if (!convId) {
-      const conv = await createConversation.mutateAsync('New Conversation');
+      const conv = await createConversation.mutateAsync(input.trim().slice(0, 30) + '...');
       convId = conv.id;
       setActiveConversation(convId);
     }
@@ -107,6 +126,17 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -125,57 +155,83 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
             </div>
             <div>
               <h3 className="font-display font-semibold text-foreground">MindMesh AI</h3>
-              <p className="text-xs text-muted-foreground">Your cognitive assistant</p>
+              <p className="text-xs text-muted-foreground">
+                {activeConversation ? conversations.find(c => c.id === activeConversation)?.title : t('chat.newConversation')}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                showHistory ? "bg-primary/20 text-primary" : "hover:bg-muted"
+              )}
+              title={t('chat.history')}
+            >
+              <History className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Conversations Sidebar */}
-          <div className="w-16 border-r border-border bg-muted/20 p-2 flex flex-col gap-2">
-            <button
-              onClick={handleCreateConversation}
-              className="w-full aspect-square rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
-              title="New conversation"
-            >
-              <Plus className="w-5 h-5 text-primary" />
-            </button>
-            <ScrollArea className="flex-1">
-              <div className="space-y-2">
-                {conversations.slice(0, 10).map((conv) => (
-                  <div key={conv.id} className="relative group">
-                    <button
-                      onClick={() => setActiveConversation(conv.id)}
-                      className={cn(
-                        "w-full aspect-square rounded-lg flex items-center justify-center transition-colors",
-                        activeConversation === conv.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted/30 hover:bg-muted/50 text-muted-foreground"
-                      )}
-                      title={conv.title}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConversation(conv.id)}
-                      className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+          {/* Chat History Sidebar */}
+          <AnimatePresence>
+            {showHistory && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 200, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                className="border-r border-border bg-muted/20 overflow-hidden"
+              >
+                <div className="p-3 h-full flex flex-col">
+                  <button
+                    onClick={handleCreateConversation}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-colors mb-3"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('chat.newConversation')}
+                  </button>
+                  
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-1">
+                      {conversations.map((conv) => (
+                        <div key={conv.id} className="relative group">
+                          <button
+                            onClick={() => handleSelectConversation(conv.id)}
+                            className={cn(
+                              "w-full text-left px-3 py-2 rounded-lg transition-colors text-sm",
+                              activeConversation === conv.id
+                                ? "bg-primary/20 text-primary"
+                                : "hover:bg-muted text-foreground"
+                            )}
+                          >
+                            <p className="font-medium truncate">{conv.title}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(conv.updated_at)}</p>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteConversation(conv.id)}
+                            className="absolute top-2 right-2 p-1 rounded bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0">
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
@@ -261,7 +317,7 @@ export const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask me anything..."
+                  placeholder={t('chat.placeholder')}
                   rows={1}
                   className="flex-1 px-4 py-2.5 bg-muted/50 border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
                   disabled={isStreaming}

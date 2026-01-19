@@ -2,14 +2,16 @@ import { motion } from 'framer-motion';
 import { Brain, Sparkles, ArrowRight, Play, Mic } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { VoiceChat } from './VoiceChat';
 
 export const HeroSection = () => {
   const [isListening, setIsListening] = useState(false);
+  const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  const { t } = useLanguage();
 
   const handleVoiceDemo = () => {
-    setIsListening(true);
-    // Simulate voice AI demo
-    setTimeout(() => setIsListening(false), 3000);
+    setVoiceChatOpen(true);
   };
 
   return (
@@ -46,9 +48,7 @@ export const HeroSection = () => {
                 <span className="text-foreground">Twin</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-lg">
-                MindMesh AI is your digital brain — continuously optimizing your 
-                productivity, learning, goals, and mental wellness through 
-                advanced artificial intelligence.
+                {t('hero.description')}
               </p>
             </div>
 
@@ -60,14 +60,14 @@ export const HeroSection = () => {
               className="flex flex-wrap gap-4"
             >
               <Link to="/auth" className="btn-cyber flex items-center gap-2 text-lg">
-                <span className="relative z-10">Start Free</span>
+                <span className="relative z-10">{t('hero.getStarted')}</span>
                 <ArrowRight className="w-5 h-5 relative z-10" />
               </Link>
               <Link to="/dashboard" className="btn-glass flex items-center gap-2 text-lg group">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
                   <Play className="w-4 h-4 text-primary fill-primary" />
                 </div>
-                <span>Live Demo</span>
+                <span>{t('hero.liveDemo')}</span>
               </Link>
             </motion.div>
 
@@ -79,41 +79,21 @@ export const HeroSection = () => {
             >
               <button
                 onClick={handleVoiceDemo}
-                className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all ${
-                  isListening 
-                    ? 'bg-primary/20 border-2 border-primary' 
-                    : 'glass-card hover:bg-primary/10'
-                }`}
+                className="flex items-center gap-3 px-6 py-3 rounded-xl glass-card hover:bg-primary/10 transition-all"
               >
                 <motion.div
-                  animate={isListening ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.5, repeat: isListening ? Infinity : 0 }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    isListening ? 'bg-primary' : 'bg-primary/20'
-                  }`}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r from-primary to-secondary"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <Mic className={`w-5 h-5 ${isListening ? 'text-primary-foreground' : 'text-primary'}`} />
+                  <Mic className="w-5 h-5 text-primary-foreground" />
                 </motion.div>
                 <div className="text-left">
-                  <p className="font-medium text-foreground">
-                    {isListening ? 'Listening...' : 'Try Voice AI'}
-                  </p>
+                  <p className="font-medium text-foreground">{t('hero.voiceAI')}</p>
                   <p className="text-xs text-muted-foreground">
-                    {isListening ? 'Speak your command' : 'Click to experience voice control'}
+                    Click to experience voice control
                   </p>
                 </div>
-                {isListening && (
-                  <div className="flex items-center gap-1 ml-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-1 bg-primary rounded-full"
-                        animate={{ height: [8, 24, 8] }}
-                        transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                      />
-                    ))}
-                  </div>
-                )}
               </button>
             </motion.div>
 
@@ -263,6 +243,9 @@ export const HeroSection = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Voice Chat Modal */}
+      <VoiceChat isOpen={voiceChatOpen} onClose={() => setVoiceChatOpen(false)} />
     </section>
   );
 };

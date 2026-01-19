@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, Palette, Bell, Shield, Home, Save, Camera, 
-  Moon, Sun, Sparkles, Check, ArrowLeft, Volume2, VolumeX
+  Check, ArrowLeft, Volume2, VolumeX, Globe, BellRing, BellOff
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 const themes = [
   { id: 'default', name: 'Cyber Dark', color: 'hsl(185 100% 50%)' },
@@ -23,16 +28,18 @@ const Settings = () => {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
   const { toast } = useToast();
+  const { t, language, setLanguage, languages } = useLanguage();
+  const { style, setStyle } = useTheme();
+  const { isSupported, isSubscribed, permission, subscribe, unsubscribe, sendLocalNotification } = usePushNotifications();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
   });
-  const [currentTheme, setCurrentTheme] = useState('default');
   const [notifications, setNotifications] = useState({
     email: true,
-    push: true,
+    push: isSubscribed,
     goals: true,
     wellness: true,
     weekly: true,
@@ -40,25 +47,30 @@ const Settings = () => {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   // Update form when profile loads
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setFormData({
         full_name: profile.full_name || '',
         username: profile.username || '',
       });
     }
-  });
+  }, [profile]);
+
+  // Sync push notification state
+  useEffect(() => {
+    setNotifications(prev => ({ ...prev, push: isSubscribed }));
+  }, [isSubscribed]);
 
   const handleSaveProfile = async () => {
     try {
       await updateProfile.mutateAsync(formData);
       toast({
-        title: 'Profile updated',
+        title: t('common.success'),
         description: 'Your profile has been saved successfully.',
       });
     } catch (error) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: 'Failed to update profile.',
         variant: 'destructive',
       });
@@ -66,20 +78,44 @@ const Settings = () => {
   };
 
   const handleThemeChange = (themeId: string) => {
-    setCurrentTheme(themeId);
-    document.documentElement.className = themeId === 'default' ? '' : `theme-${themeId}`;
-    localStorage.setItem('mindmesh-theme', themeId);
+    setStyle(themeId as 'default' | 'cyber' | 'neon' | 'glass' | 'ocean');
     toast({
-      title: 'Theme updated',
+      title: t('settings.theme'),
       description: `Switched to ${themes.find(t => t.id === themeId)?.name} theme.`,
     });
   };
 
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      const success = await unsubscribe();
+      if (success) {
+        toast({ title: 'Push notifications disabled' });
+      }
+    } else {
+      const success = await subscribe();
+      if (success) {
+        toast({ title: 'Push notifications enabled!' });
+        // Send test notification
+        setTimeout(() => {
+          sendLocalNotification('MindMesh AI', { 
+            body: 'Push notifications are now active! 🎉' 
+          });
+        }, 1000);
+      } else if (permission === 'denied') {
+        toast({ 
+          title: 'Permission denied', 
+          description: 'Please enable notifications in your browser settings.',
+          variant: 'destructive'
+        });
+      }
+    }
+  };
+
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
+    { id: 'profile', label: t('settings.profile'), icon: User },
+    { id: 'appearance', label: t('settings.appearance'), icon: Palette },
+    { id: 'notifications', label: t('settings.notifications'), icon: Bell },
+    { id: 'privacy', label: t('settings.privacy'), icon: Shield },
   ];
 
   return (
@@ -91,17 +127,23 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4 mb-8"
+          className="flex items-center justify-between gap-4 mb-8"
         >
-          <Link 
-            to="/dashboard" 
-            className="p-2 rounded-lg glass-card hover:bg-primary/10 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-display font-bold gradient-text">Settings</h1>
-            <p className="text-muted-foreground">Manage your account and preferences</p>
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/dashboard" 
+              className="p-2 rounded-lg glass-card hover:bg-primary/10 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-display font-bold gradient-text">{t('settings.title')}</h1>
+              <p className="text-muted-foreground">Manage your account and preferences</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <LanguageSelector />
+            <ThemeToggle />
           </div>
         </motion.div>
 
@@ -205,7 +247,7 @@ const Settings = () => {
                 >
                   <Save className="w-4 h-4 relative z-10" />
                   <span className="relative z-10">
-                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                    {updateProfile.isPending ? t('common.loading') : t('settings.save')}
                   </span>
                 </button>
               </div>
@@ -214,9 +256,32 @@ const Settings = () => {
             {/* Appearance Tab */}
             {activeTab === 'appearance' && (
               <div className="space-y-6">
+                {/* Language Selection */}
                 <div>
+                  <h3 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-primary" />
+                    {t('settings.language')}
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {Object.entries(languages).map(([code, name]) => (
+                      <button
+                        key={code}
+                        onClick={() => setLanguage(code as keyof typeof languages)}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          language === code
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <p className="font-medium text-foreground">{name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
                   <h3 className="text-lg font-display font-semibold text-foreground mb-4">
-                    Theme
+                    {t('settings.theme')}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {themes.map((theme) => (
@@ -224,7 +289,7 @@ const Settings = () => {
                         key={theme.id}
                         onClick={() => handleThemeChange(theme.id)}
                         className={`relative p-4 rounded-xl border-2 transition-all ${
-                          currentTheme === theme.id
+                          style === theme.id
                             ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50'
                         }`}
@@ -234,7 +299,7 @@ const Settings = () => {
                           style={{ background: theme.color }}
                         />
                         <p className="text-sm font-medium text-foreground">{theme.name}</p>
-                        {currentTheme === theme.id && (
+                        {style === theme.id && (
                           <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                             <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
@@ -246,7 +311,7 @@ const Settings = () => {
 
                 <div className="border-t border-border pt-6">
                   <h3 className="text-lg font-display font-semibold text-foreground mb-4">
-                    Voice AI
+                    {t('settings.voiceAI')}
                   </h3>
                   <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-3">
@@ -281,11 +346,43 @@ const Settings = () => {
             {activeTab === 'notifications' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-display font-semibold text-foreground mb-4">
-                  Notification Preferences
+                  {t('settings.notifications')}
                 </h3>
+                
+                {/* Push Notifications - Special handling */}
+                <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    {isSubscribed ? (
+                      <BellRing className="w-5 h-5 text-primary" />
+                    ) : (
+                      <BellOff className="w-5 h-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium text-foreground">{t('settings.pushNotifications')}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {isSupported 
+                          ? t('settings.enablePush')
+                          : 'Push notifications not supported in this browser'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handlePushToggle}
+                    disabled={!isSupported}
+                    className={`relative w-12 h-6 rounded-full transition-colors disabled:opacity-50 ${
+                      isSubscribed ? 'bg-primary' : 'bg-muted'
+                    }`}
+                  >
+                    <div 
+                      className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                        isSubscribed ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
                 {[
                   { key: 'email', label: 'Email Notifications', desc: 'Receive updates via email' },
-                  { key: 'push', label: 'Push Notifications', desc: 'Browser push notifications' },
                   { key: 'goals', label: 'Goal Reminders', desc: 'Get reminded about your goals' },
                   { key: 'wellness', label: 'Wellness Check-ins', desc: 'Daily wellness reminders' },
                   { key: 'weekly', label: 'Weekly Summary', desc: 'Receive weekly progress reports' },
@@ -322,7 +419,7 @@ const Settings = () => {
             {activeTab === 'privacy' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-display font-semibold text-foreground mb-4">
-                  Privacy & Security
+                  {t('settings.privacy')}
                 </h3>
                 
                 <div className="p-4 rounded-lg bg-muted/30">
