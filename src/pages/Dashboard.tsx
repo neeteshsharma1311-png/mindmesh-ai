@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Zap, Battery, Target, Plus, TrendingUp, Home } from 'lucide-react';
+import { Brain, Zap, Battery, Target, Plus, TrendingUp, Home, Timer, Heart, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NeuralBackground } from '@/components/NeuralBackground';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -13,6 +13,9 @@ import { AddGoalModal } from '@/components/dashboard/AddGoalModal';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { ChatButton } from '@/components/chat/ChatButton';
 import { VoiceChat } from '@/components/VoiceChat';
+import { FocusTimer } from '@/components/dashboard/FocusTimer';
+import { MoodCheckIn } from '@/components/dashboard/MoodCheckIn';
+import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest';
 import { MobileNav } from '@/components/MobileNav';
 import { useLatestMetrics } from '@/hooks/useCognitiveMetrics';
 import { useGoals } from '@/hooks/useGoals';
@@ -24,6 +27,9 @@ const Dashboard = () => {
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  const [focusTimerOpen, setFocusTimerOpen] = useState(false);
+  const [moodCheckInOpen, setMoodCheckInOpen] = useState(false);
+  const [weeklyDigestOpen, setWeeklyDigestOpen] = useState(false);
   
   const { data: metrics } = useLatestMetrics();
   const { data: goals = [] } = useGoals();
@@ -67,10 +73,33 @@ const Dashboard = () => {
                       {t('common.today')}.
                     </p>
                   </div>
-                  <button onClick={() => setShowAddGoal(true)} className="btn-cyber flex items-center gap-2 shrink-0">
-                    <Plus className="w-5 h-5 relative z-10" />
-                    <span className="relative z-10">{t('dashboard.newGoal')}</span>
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setFocusTimerOpen(true)}
+                      className="btn-cyber flex items-center gap-2 shrink-0"
+                    >
+                      <Timer className="w-5 h-5 relative z-10" />
+                      <span className="relative z-10">Focus Timer</span>
+                    </button>
+                    <button
+                      onClick={() => setMoodCheckInOpen(true)}
+                      className="glass-card px-4 py-2 flex items-center gap-2 rounded-lg hover:bg-primary/10 transition-colors"
+                    >
+                      <Heart className="w-5 h-5 text-pink-500" />
+                      <span className="text-sm font-medium">Mood Check-In</span>
+                    </button>
+                    <button
+                      onClick={() => setWeeklyDigestOpen(true)}
+                      className="glass-card px-4 py-2 flex items-center gap-2 rounded-lg hover:bg-primary/10 transition-colors"
+                    >
+                      <Mail className="w-5 h-5 text-primary" />
+                      <span className="text-sm font-medium">Weekly Digest</span>
+                    </button>
+                    <button onClick={() => setShowAddGoal(true)} className="btn-cyber flex items-center gap-2 shrink-0">
+                      <Plus className="w-5 h-5 relative z-10" />
+                      <span className="relative z-10">{t('dashboard.newGoal')}</span>
+                    </button>
+                  </div>
                 </div>
               </motion.div>
 
@@ -127,6 +156,15 @@ const Dashboard = () => {
       
       {/* Voice Chat */}
       <VoiceChat isOpen={voiceChatOpen} onClose={() => setVoiceChatOpen(false)} />
+      
+      {/* Focus Timer */}
+      <FocusTimer isOpen={focusTimerOpen} onClose={() => setFocusTimerOpen(false)} />
+      
+      {/* Mood Check-In */}
+      <MoodCheckIn isOpen={moodCheckInOpen} onClose={() => setMoodCheckInOpen(false)} />
+      
+      {/* Weekly Digest */}
+      <WeeklyDigest isOpen={weeklyDigestOpen} onClose={() => setWeeklyDigestOpen(false)} />
       
       {/* Mobile Navigation */}
       <MobileNav />
